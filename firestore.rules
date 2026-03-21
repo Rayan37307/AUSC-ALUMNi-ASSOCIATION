@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Alumni collection
+    match /alumni/{alumniId} {
+      // Development mode - allow all read/write
+      // TODO: Update for production with proper authentication
+      allow read, write: if true;
+    }
+  }
+}

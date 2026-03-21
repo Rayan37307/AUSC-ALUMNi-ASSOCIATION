@@ -1,0 +1,48 @@
+name: flutter_application_1
+description: "AUSC Alumni Management App - A Flutter application for managing alumni data"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Backend - Supabase (PostgreSQL with auto API)
+  supabase_flutter: ^2.12.0
+  
+  # State Management
+  provider: ^6.1.1
+
+  # Navigation
+  go_router: ^12.1.1
+
+  # UI Components
+  cached_network_image: ^3.3.1
+  flutter_cache_manager: ^3.3.1
+  shimmer: ^3.0.0
+
+  # Utilities
+  flutter_dotenv: ^5.1.0
+  intl: ^0.18.1
+  shared_preferences: ^2.2.2
+
+  # Icons
+  cupertino_icons: ^1.0.6
+
+  # Image Picker for avatars
+  image_picker: ^1.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - .env
+    - assets/images/

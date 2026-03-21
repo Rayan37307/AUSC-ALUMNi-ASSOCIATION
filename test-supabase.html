@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Connection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .config {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .config label {
+            font-weight: bold;
+            color: #555;
+        }
+        button {
+            background: #0a7ea4;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #086884;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(10, 126, 164, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            display: block;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            display: block;
+        }
+        .result h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result pre {
+            background: rgba(0,0,0,0.05);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0a7ea4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .steps {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            display: none;
+        }
+        .steps h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .steps ol {
+            color: #856404;
+            margin-left: 20px;
+        }
+        .steps li {
+            margin-bottom: 8px;
+        }
+        .steps a {
+            color: #0a7ea4;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .steps a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Supabase Connection Test</h1>
+        <p class="subtitle">Test your Supabase database connection before building the Flutter app</p>
+
+        <div class="config">
+            <label>Supabase URL:</label><br>
+            <span id="supabaseUrl">https://mefthrvjlcwsoflvwuvj.supabase.co</span><br><br>
+            <label>Anon Key:</label><br>
+            <span id="supabaseKey">sb_publishable_1Gfqa6YbiD0PotDQbxMe7g_oXBL83v4</span>
+        </div>
+
+        <button id="testBtn" onclick="testConnection()">
+            🔌 Test Connection
+        </button>
+
+        <div id="result" class="result"></div>
+
+        <div id="steps" class="steps">
+            <h4>⚠️ Table Not Found - Setup Required</h4>
+            <ol>
+                <li>Go to <a href="https://app.supabase.com/project/mefthrvjlcwsoflvwuvj/sql/new" target="_blank">Supabase SQL Editor</a></li>
+                <li>Copy and paste this SQL:</li>
+            </ol>
+            <pre id="sqlCode" style="background: rgba(0,0,0,0.1); padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 11px;"></pre>
+            <button onclick="copySQL()" style="margin-top: 10px; padding: 8px 16px; font-size: 14px;">📋 Copy SQL</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://mefthrvjlcwsoflvwuvj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_1Gfqa6YbiD0PotDQbxMe7g_oXBL83v4';
+
+        const sqlScript = `CREATE TABLE alumni (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  village TEXT DEFAULT '',
+  post_office TEXT DEFAULT '',
+  upazila TEXT DEFAULT '',
+  district TEXT DEFAULT '',
+  currently_doing TEXT DEFAULT '',
+  achievements TEXT DEFAULT '',
+  batch_year TEXT NOT NULL,
+  position TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE alumni ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON alumni FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX idx_alumni_created_at ON alumni(created_at DESC);
+
+-- Sample data
+INSERT INTO alumni (name, phone, batch_year, position, currently_doing, village, district)
+VALUES 
+  ('Md. Rahim Ahmed', '01712345678', '1990', 'Software Engineer', 'Working at Google', 'Mirpur', 'Dhaka'),
+  ('Fatema Begum', '01812345679', '1995', 'Doctor', 'Working at DMCH', 'Mohammadpur', 'Dhaka'),
+  ('Karim Hossain', '01912345680', '2000', 'Student', 'Studying at BUET', 'Dhanmondi', 'Dhaka');`;
+
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            const result = document.getElementById('result');
+            const steps = document.getElementById('steps');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Testing...';
+            result.className = 'result';
+            result.style.display = 'none';
+            steps.style.display = 'none';
+
+            try {
+                // Initialize Supabase client
+                const { createClient } = supabase;
+                const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                // Test connection by querying alumni table
+                const { data, error } = await _supabase
+                    .from('alumni')
+                    .select('*')
+                    .limit(5);
+
+                if (error) {
+                    throw error;
+                }
+
+                // Success!
+                result.className = 'result success';
+                result.innerHTML = `
+                    <h3>✅ Connection Successful!</h3>
+                    <p><strong>Status:</strong> Supabase is working correctly</p>
+                    <p><strong>Alumni found:</strong> ${data ? data.length : 0} records</p>
+                    ${data && data.length > 0 ? `
+                        <p><strong>Sample data:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    ` : '<p><strong>Note:</strong> Table exists but no data. Add alumni from the app!</p>'}
+                    <p style="margin-top: 15px; color: #28a745; font-weight: 600;">
+                        🎉 You can now build and run the Flutter app!
+                    </p>
+                `;
+
+            } catch (error) {
+                result.className = 'result error';
+                
+                if (error.message.includes('relation') || error.message.includes('does not exist')) {
+                    // Table doesn't exist
+                    result.innerHTML = `
+                        <h3>❌ Table Not Found</h3>
+                        <p><strong>Error:</strong> The 'alumni' table doesn't exist in your database.</p>
+                        <p><strong>Details:</strong> ${error.message}</p>
+                    `;
+                    steps.style.display = 'block';
+                    document.getElementById('sqlCode').textContent = sqlScript;
+                } else if (error.message.includes('JWT') || error.message.includes('permission')) {
+                    // Permission error
+                    result.innerHTML = `
+                        <h3>❌ Permission Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Solution:</strong> Run the SQL script to set up proper permissions (RLS policies).</p>
+                    `;
+                    steps.style.display = 'block';
+                    document.getElementById('sqlCode').textContent = sqlScript;
+                } else {
+                    // Other error
+                    result.innerHTML = `
+                        <h3>❌ Connection Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Details:</strong> ${JSON.stringify(error)}</p>
+                        <p style="margin-top: 10px;"><strong>Check:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 5px;">
+                            <li>Internet connection</li>
+                            <li>Supabase URL is correct</li>
+                            <li>Anon key is valid</li>
+                            <li>Supabase project is active</li>
+                        </ul>
+                    `;
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔌 Test Connection';
+            }
+        }
+
+        function copySQL() {
+            navigator.clipboard.writeText(sqlScript).then(() => {
+                alert('SQL copied to clipboard! Now paste it in Supabase SQL Editor.');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: white; }
+        .box { background: #333; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #28a745; }
+        .error { background: #dc3545; }
+        button { background: #0a7ea4; color: white; border: none; padding: 15px 30px; 
+                 border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #086884; }
+        pre { background: #222; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Supabase Connection Test</h1>
+    
+    <div class="box">
+        <h3>Your Config:</h3>
+        <p><strong>URL:</strong> https://mefthrvjlcwsoflvwuvj.supabase.co</p>
+        <p><strong>Key:</strong> sb_publishable_1Gfqa6YbiD0PotDQbxMe7g_oXBL83v4</p>
+    </div>
+
+    <button onclick="test()">🔌 Test Connection</button>
+    <button onclick="showSQL()">📋 Show SQL Setup</button>
+
+    <div id="result" class="box hidden"></div>
+    
+    <div id="sqlbox" class="box hidden">
+        <h3>Run this SQL in Supabase:</h3>
+        <p><a href="https://app.supabase.com/project/mefthrvjlcwsoflvwuvj/sql/new" target="_blank" 
+              style="color: #0a7ea4;">Open SQL Editor →</a></p>
+        <pre id="sql"></pre>
+        <button onclick="copySQL()">📋 Copy SQL</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const url = 'https://mefthrvjlcwsoflvwuvj.supabase.co';
+        const key = 'sb_publishable_1Gfqa6YbiD0PotDQbxMe7g_oXBL83v4';
+        
+        const sql = `CREATE TABLE alumni (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  village TEXT DEFAULT '',
+  post_office TEXT DEFAULT '',
+  upazila TEXT DEFAULT '',
+  district TEXT DEFAULT '',
+  currently_doing TEXT DEFAULT '',
+  achievements TEXT DEFAULT '',
+  batch_year TEXT NOT NULL,
+  position TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE alumni ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON alumni FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX idx_alumni_created_at ON alumni(created_at DESC);`;
+
+        async function test() {
+            const result = document.getElementById('result');
+            result.className = 'box';
+            result.innerHTML = '⏳ Testing...';
+            result.classList.remove('hidden');
+
+            try {
+                const supabase = window.supabase.createClient(url, key);
+                const { data, error } = await supabase.from('alumni').select('*').limit(1);
+                
+                if (error) throw error;
+                
+                result.className = 'box success';
+                result.innerHTML = `
+                    <h2>✅ SUCCESS!</h2>
+                    <p>Supabase is connected and working!</p>
+                    <p><strong>Records found:</strong> ${data ? data.length : 0}</p>
+                    ${data && data.length > 0 ? `<pre>${JSON.stringify(data[0], null, 2)}</pre>` : ''}
+                    <p style="margin-top:15px"><strong>🎉 Now you can build the APK:</strong></p>
+                    <code>flutter build apk --release</code>
+                `;
+            } catch (err) {
+                result.className = 'box error';
+                result.innerHTML = `
+                    <h2>❌ ERROR</h2>
+                    <p><strong>Message:</strong> ${err.message}</p>
+                    ${err.message.includes('relation') || err.message.includes('exist') ? `
+                        <p><strong>Problem:</strong> Table 'alumni' doesn't exist</p>
+                        <p><strong>Fix:</strong> Click "Show SQL Setup" and run the SQL in Supabase</p>
+                    ` : ''}
+                    ${err.message.includes('JWT') || err.message.includes('permission') ? `
+                        <p><strong>Problem:</strong> Permission issue</p>
+                        <p><strong>Fix:</strong> Click "Show SQL Setup" and run the SQL in Supabase</p>
+                    ` : ''}
+                `;
+                
+                if (err.message.includes('relation') || err.message.includes('exist') || 
+                    err.message.includes('JWT') || err.message.includes('permission')) {
+                    document.getElementById('sqlbox').classList.remove('hidden');
+                }
+            }
+        }
+
+        function showSQL() {
+            document.getElementById('sqlbox').classList.remove('hidden');
+            document.getElementById('sql').textContent = sql;
+        }
+
+        function copySQL() {
+            navigator.clipboard.writeText(sql);
+            alert('SQL copied! Now paste it in Supabase SQL Editor and run it.');
+        }
+    </script>
+</body>
+</html>
