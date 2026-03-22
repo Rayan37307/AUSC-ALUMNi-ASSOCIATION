@@ -1,5 +1,5 @@
-name: flutter_application_1
-description: "AUSC Alumni Management App - A Flutter application for managing alumni data"
+name: ausc
+description: "AUSC Alumni Association App - A Flutter application for managing alumni data"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -34,6 +34,14 @@ dependencies:
 
   # Image Picker for avatars
   image_picker: ^1.0.5
+
+  # Design & Animations
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+
+  # Actions
+  url_launcher: ^6.2.1
+  share_plus: ^7.2.1
 
 dev_dependencies:
   flutter_test:

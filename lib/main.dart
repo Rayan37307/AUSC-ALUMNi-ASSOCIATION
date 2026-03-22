@@ -66,15 +66,15 @@ class MyApp extends StatelessWidget {
           create: (_) => AlumniListProvider(repository),
         ),
         // Alumni detail provider (created on demand)
-        ProxyProvider0<AlumniDetailProvider>(
-          update: (_, previous) => AlumniDetailProvider(repository),
-          dispose: (_, provider) => provider.dispose(),
+        ChangeNotifierProvider(
+          create: (_) => AlumniDetailProvider(repository),
+          lazy: true,
         ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp.router(
-            title: 'AUSC Alumni',
+            title: 'AUSC Alumni Association',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

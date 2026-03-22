@@ -17,13 +17,16 @@ class Avatar extends StatelessWidget {
   });
 
   String get _firstLetter {
-    if (name.isEmpty) return '?';
-    return name.trim()[0].toUpperCase();
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return '?';
+    return trimmed[0].toUpperCase();
   }
 
   Color get _avatarColor {
     if (backgroundColor != null) return backgroundColor!;
-    final index = name.trim().toLowerCase().codeUnitAt(0) % AppColors.avatarColors.length;
+    final trimmed = name.trim().toLowerCase();
+    if (trimmed.isEmpty) return AppColors.avatarColors[0];
+    final index = trimmed.codeUnitAt(0) % AppColors.avatarColors.length;
     return AppColors.avatarColors[index];
   }
 

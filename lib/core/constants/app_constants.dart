@@ -1,7 +1,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'AUSC Alumni';
+  static const String appName = 'AUSC Alumni Association';
   static const String schoolName = 'AFTAB UDDIN SCHOOL & COLLEGE';
   
   // Cache settings

@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/gradient_button.dart';
+import '../../../core/widgets/info_tile.dart';
 import '../../../core/widgets/themed_text.dart';
 import '../../../core/widgets/year_selector.dart';
 import '../../../data/models/alumni.dart';
 import '../../providers/alumni_list_provider.dart';
 
-/// Add Alumni Screen - Form to add a new alumni
 class AddAlumniScreen extends StatefulWidget {
   const AddAlumniScreen({super.key});
 
@@ -19,7 +24,6 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
 
-  // Form fields
   String _name = '';
   String _phone = '';
   String _village = '';
@@ -32,6 +36,30 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
   String _batchYear = DateTime.now().year.toString();
 
   bool _isLoading = false;
+  int _currentStep = 0;
+
+  final List<_FormSection> _sections = [
+    _FormSection(
+      title: 'Basic Info',
+      icon: Icons.person_rounded,
+      fields: ['name', 'phone'],
+    ),
+    _FormSection(
+      title: 'Batch Year',
+      icon: Icons.school_rounded,
+      fields: ['batchYear'],
+    ),
+    _FormSection(
+      title: 'Location',
+      icon: Icons.location_on_rounded,
+      fields: ['village', 'postOffice', 'upazila', 'district'],
+    ),
+    _FormSection(
+      title: 'Professional',
+      icon: Icons.work_rounded,
+      fields: ['position', 'currentlyDoing', 'achievements'],
+    ),
+  ];
 
   @override
   void dispose() {
@@ -39,214 +67,385 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
     super.dispose();
   }
 
+  void _scrollToField(String field) {
+    final fieldMap = {
+      'name': 0,
+      'phone': 1,
+      'batchYear': 2,
+      'village': 3,
+      'postOffice': 4,
+      'upazila': 5,
+      'district': 6,
+      'position': 7,
+      'currentlyDoing': 8,
+      'achievements': 9,
+    };
+    final index = fieldMap[field];
+    if (index != null) {
+      _scrollController.animateTo(
+        index * 80.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const ThemedText('Add Alumni'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Name field
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Name *',
-                hintText: 'Enter full name',
-                prefixIcon: Icon(Icons.person),
-              ),
-              textCapitalization: TextCapitalization.words,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Name is required';
-                }
-                return null;
-              },
-              onSaved: (value) => _name = value!.trim(),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _buildAppBar(),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [AppColors.darkBackground, AppColors.darkSurface]
+                  : [
+                      AppColors.primaryStart.withValues(alpha: 0.1),
+                      AppColors.lightBackground,
+                    ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-
-            const SizedBox(height: 16),
-
-            // Phone field
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Phone Number *',
-                hintText: 'Enter phone number',
-                prefixIcon: Icon(Icons.phone),
-              ),
-              keyboardType: TextInputType.phone,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Phone number is required';
-                }
-                return null;
-              },
-              onSaved: (value) => _phone = value!.trim(),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildProgressIndicator(),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                      children: [
+                        _buildSection(0),
+                        _buildNameField(),
+                        _buildPhoneField(),
+                        const SizedBox(height: 24),
+                        _buildSection(1),
+                        _buildBatchYearSelector(),
+                        const SizedBox(height: 24),
+                        _buildSection(2),
+                        _buildLocationFields(),
+                        const SizedBox(height: 24),
+                        _buildSection(3),
+                        _buildProfessionalFields(),
+                        const SizedBox(height: 32),
+                        _buildSubmitButton(),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Batch Year Selector
-            const ThemedText(
-              'Batch Year *',
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-            const SizedBox(height: 8),
-            YearSelector(
-              selectedYear: int.parse(_batchYear),
-              onYearSelected: (year) {
-                setState(() {
-                  _batchYear = year.toString();
-                });
-              },
-              minYear: AppConstants.minBatchYear,
-              maxYear: DateTime.now().year + 5,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Location Section
-            const ThemedText(
-              'Location Information',
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Village',
-                hintText: 'Enter village name',
-                prefixIcon: Icon(Icons.location_on),
-              ),
-              textCapitalization: TextCapitalization.words,
-              onSaved: (value) => _village = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Post Office',
-                hintText: 'Enter post office',
-                prefixIcon: Icon(Icons.business),
-              ),
-              textCapitalization: TextCapitalization.words,
-              onSaved: (value) => _postOffice = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Upazila',
-                hintText: 'Enter upazila',
-                prefixIcon: Icon(Icons.map),
-              ),
-              textCapitalization: TextCapitalization.words,
-              onSaved: (value) => _upazila = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'District',
-                hintText: 'Enter district',
-                prefixIcon: Icon(Icons.location_city),
-              ),
-              textCapitalization: TextCapitalization.words,
-              onSaved: (value) => _district = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 24),
-
-            // Professional Section
-            const ThemedText(
-              'Professional Information',
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Current Position',
-                hintText: 'e.g., Software Engineer, Student',
-                prefixIcon: Icon(Icons.work),
-              ),
-              textCapitalization: TextCapitalization.words,
-              onSaved: (value) => _position = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Currently Doing',
-                hintText: 'Describe what you are currently doing',
-                prefixIcon: Icon(Icons.description),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              onSaved: (value) => _currentlyDoing = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 16),
-
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Achievements',
-                hintText: 'List your achievements',
-                prefixIcon: Icon(Icons.emoji_events),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              onSaved: (value) => _achievements = value?.trim() ?? '',
-            ),
-
-            const SizedBox(height: 32),
-
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4),
-                        child: ThemedText(
-                          'Add Alumni',
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
   }
 
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.arrow_back_rounded),
+        ),
+      ),
+      title: const Text('Add Alumni'),
+      actions: [
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                '${_currentStep + 1}/${_sections.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: List.generate(_sections.length, (index) {
+          final isActive = index <= _currentStep;
+          final isCurrent = index == _currentStep;
+
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: 4,
+                decoration: BoxDecoration(
+                  gradient: isActive ? AppColors.primaryGradient : null,
+                  color: isActive ? null : Theme.of(context).dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildSection(int index) {
+    final section = _sections[index];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(section.icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                section.title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(delay: Duration(milliseconds: 50 * index))
+        .slideX(begin: -0.1, delay: Duration(milliseconds: 50 * index));
+  }
+
+  Widget _buildNameField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _ModernTextField(
+        label: 'Full Name',
+        hint: 'Enter full name',
+        icon: Icons.person_rounded,
+        value: _name,
+        onChanged: (value) => setState(() => _name = value),
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Name is required';
+          }
+          return null;
+        },
+        onSaved: (value) => _name = value!.trim(),
+        textCapitalization: TextCapitalization.words,
+      ),
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _ModernTextField(
+        label: 'Phone Number',
+        hint: 'Enter phone number',
+        icon: Icons.phone_rounded,
+        value: _phone,
+        onChanged: (value) => setState(() => _phone = value),
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Phone number is required';
+          }
+          return null;
+        },
+        onSaved: (value) => _phone = value!.trim(),
+        keyboardType: TextInputType.phone,
+      ),
+    );
+  }
+
+  Widget _buildBatchYearSelector() {
+    return GlassCard(
+      padding: const EdgeInsets.all(4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: Row(
+              children: [
+                Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Select Batch Year',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          YearSelector(
+            selectedYear: int.parse(_batchYear),
+            onYearSelected: (year) {
+              HapticFeedback.selectionClick();
+              setState(() {
+                _batchYear = year.toString();
+              });
+            },
+            minYear: AppConstants.minBatchYear,
+            maxYear: DateTime.now().year + 5,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationFields() {
+    return Column(
+      children: [
+        _buildTextField(
+          label: 'Village',
+          hint: 'Enter village name',
+          icon: Icons.home_rounded,
+          value: _village,
+          onChanged: (value) => setState(() => _village = value),
+          textCapitalization: TextCapitalization.words,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          label: 'Post Office',
+          hint: 'Enter post office',
+          icon: Icons.local_post_office_rounded,
+          value: _postOffice,
+          onChanged: (value) => setState(() => _postOffice = value),
+          textCapitalization: TextCapitalization.words,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          label: 'Upazila',
+          hint: 'Enter upazila',
+          icon: Icons.map_rounded,
+          value: _upazila,
+          onChanged: (value) => setState(() => _upazila = value),
+          textCapitalization: TextCapitalization.words,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          label: 'District',
+          hint: 'Enter district',
+          icon: Icons.location_city_rounded,
+          value: _district,
+          onChanged: (value) => setState(() => _district = value),
+          textCapitalization: TextCapitalization.words,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfessionalFields() {
+    return Column(
+      children: [
+        _buildTextField(
+          label: 'Current Position',
+          hint: 'e.g., Software Engineer, Student',
+          icon: Icons.work_rounded,
+          value: _position,
+          onChanged: (value) => setState(() => _position = value),
+          textCapitalization: TextCapitalization.words,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          label: 'Currently Doing',
+          hint: 'Describe what you are currently doing',
+          icon: Icons.description_rounded,
+          value: _currentlyDoing,
+          onChanged: (value) => setState(() => _currentlyDoing = value),
+          textCapitalization: TextCapitalization.sentences,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          label: 'Achievements',
+          hint: 'List your achievements',
+          icon: Icons.emoji_events_rounded,
+          value: _achievements,
+          onChanged: (value) => setState(() => _achievements = value),
+          textCapitalization: TextCapitalization.sentences,
+          maxLines: 4,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required String hint,
+    required IconData icon,
+    required String value,
+    required ValueChanged<String> onChanged,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    int maxLines = 1,
+  }) {
+    return _ModernTextField(
+      label: label,
+      hint: hint,
+      icon: icon,
+      value: value,
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      maxLines: maxLines,
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return GradientButton(
+      text: 'Add Alumni',
+      icon: Icons.add_rounded,
+      isLoading: _isLoading,
+      onPressed: _submitForm,
+    );
+  }
+
   void _submitForm() async {
     if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all required fields'),
+          backgroundColor: AppColors.error,
+        ),
+      );
       return;
     }
 
@@ -277,10 +476,11 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
       await context.read<AlumniListProvider>().addAlumni(alumni);
 
       if (mounted) {
+        HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Alumni added successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
         context.pop();
@@ -289,8 +489,10 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString().replaceFirst("Exception: ", "")}'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Error: ${e.toString().replaceFirst("Exception: ", "")}',
+            ),
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -301,5 +503,153 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
         });
       }
     }
+  }
+}
+
+class _FormSection {
+  final String title;
+  final IconData icon;
+  final List<String> fields;
+
+  _FormSection({required this.title, required this.icon, required this.fields});
+}
+
+class _ModernTextField extends StatefulWidget {
+  final String label;
+  final String hint;
+  final IconData icon;
+  final String value;
+  final ValueChanged<String> onChanged;
+  final String? Function(String?)? validator;
+  final void Function(String?)? onSaved;
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final int maxLines;
+
+  const _ModernTextField({
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.value,
+    required this.onChanged,
+    this.validator,
+    this.onSaved,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.maxLines = 1,
+  });
+
+  @override
+  State<_ModernTextField> createState() => _ModernTextFieldState();
+}
+
+class _ModernTextFieldState extends State<_ModernTextField> {
+  late TextEditingController _controller;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_ModernTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Focus(
+      onFocusChange: (focused) {
+        setState(() {
+          _isFocused = focused;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          gradient: _isFocused
+              ? LinearGradient(
+                  colors: [
+                    AppColors.primaryStart.withValues(alpha: 0.1),
+                    AppColors.primaryEnd.withValues(alpha: 0.1),
+                  ],
+                )
+              : null,
+          border: Border.all(
+            color: _isFocused
+                ? AppColors.primary
+                : (isDark ? AppColors.darkDivider : AppColors.lightDivider),
+            width: _isFocused ? 2 : 1,
+          ),
+          boxShadow: _isFocused
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: TextFormField(
+          controller: _controller,
+          onChanged: widget.onChanged,
+          validator: widget.validator,
+          onSaved: widget.onSaved,
+          keyboardType: widget.keyboardType,
+          textCapitalization: widget.textCapitalization,
+          maxLines: widget.maxLines,
+          style: Theme.of(context).textTheme.bodyLarge,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            hintText: widget.hint,
+            prefixIcon: Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _isFocused
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : (isDark
+                          ? AppColors.darkSurfaceVariant
+                          : AppColors.lightSurfaceVariant),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                widget.icon,
+                color: _isFocused
+                    ? AppColors.primary
+                    : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
+                size: 20,
+              ),
+            ),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

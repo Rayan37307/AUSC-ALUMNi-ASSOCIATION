@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/avatar.dart';
+import '../../../core/widgets/animated_avatar.dart';
 import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/loading_indicator.dart';
+import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/gradient_button.dart';
+import '../../../core/widgets/info_tile.dart';
 import '../../../core/widgets/themed_text.dart';
-import '../../../core/widgets/themed_view.dart';
 import '../../providers/alumni_detail_provider.dart';
+import '../../providers/alumni_list_provider.dart';
 
-/// Alumni Detail Screen - Displays full alumni information
 class AlumniDetailScreen extends StatefulWidget {
   final String alumniId;
 
-  const AlumniDetailScreen({
-    super.key,
-    required this.alumniId,
-  });
+  const AlumniDetailScreen({super.key, required this.alumniId});
 
   @override
   State<AlumniDetailScreen> createState() => _AlumniDetailScreenState();
@@ -32,6 +34,60 @@ class _AlumniDetailScreenState extends State<AlumniDetailScreen> {
     });
   }
 
+  Future<void> _launchPhone(String phone) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phone);
+    try {
+      await launchUrl(phoneUri);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Could not launch phone')));
+      }
+    }
+  }
+
+  Future<void> _launchSms(String phone) async {
+    final Uri smsUri = Uri(scheme: 'sms', path: phone);
+    try {
+      await launchUrl(smsUri);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch messages')),
+        );
+      }
+    }
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied to clipboard'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _shareAlumni() {
+    final alumni = context.read<AlumniDetailProvider>().alumni;
+    if (alumni == null) return;
+
+    final shareText =
+        '''
+${alumni.name}
+${alumni.position.isNotEmpty ? 'Position: ${alumni.position}' : ''}
+${alumni.batchYear.isNotEmpty ? 'Batch: ${alumni.batchYear}' : ''}
+${alumni.phone.isNotEmpty ? 'Phone: ${alumni.phone}' : ''}
+${alumni.currentlyDoing.isNotEmpty ? 'Currently: ${alumni.currentlyDoing}' : ''}
+
+Shared from AUSC Alumni App
+''';
+
+    Share.share(shareText.trim());
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -39,27 +95,11 @@ class _AlumniDetailScreenState extends State<AlumniDetailScreen> {
       child: Consumer<AlumniDetailProvider>(
         builder: (context, provider, child) {
           return Scaffold(
-            appBar: AppBar(
-              title: provider.alumni != null
-                  ? ThemedTitle(provider.alumni!.name)
-                  : const ThemedText('Alumni Detail'),
-              actions: [
-                if (provider.alumni != null) ...[
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _showEditDialog(context, provider),
-                    tooltip: 'Edit',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _confirmDelete(context, provider),
-                    tooltip: 'Delete',
-                    color: AppColors.error,
-                  ),
-                ],
-              ],
-            ),
+            extendBodyBehindAppBar: true,
             body: _buildContent(provider),
+            floatingActionButton: provider.alumni != null
+                ? _buildFAB(provider)
+                : null,
           );
         },
       ),
@@ -68,7 +108,7 @@ class _AlumniDetailScreenState extends State<AlumniDetailScreen> {
 
   Widget _buildContent(AlumniDetailProvider provider) {
     if (provider.isLoading) {
-      return const LoadingIndicator(message: 'Loading alumni...');
+      return const LoadingState(message: 'Loading alumni...');
     }
 
     if (provider.hasError) {
@@ -81,260 +121,456 @@ class _AlumniDetailScreenState extends State<AlumniDetailScreen> {
     if (provider.alumni == null) {
       return const EmptyState(
         title: 'Alumni not found',
-        icon: Icons.person_off,
+        icon: Icons.person_off_rounded,
       );
     }
 
     final alumni = provider.alumni!;
 
-    return RefreshIndicator(
-      onRefresh: () => provider.refreshAlumni(alumni.id),
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Avatar and Name Header
-          _buildHeader(alumni),
+    return CustomScrollView(
+      slivers: [
+        _buildAppBar(alumni, provider),
+        SliverToBoxAdapter(child: _buildBody(alumni)),
+      ],
+    );
+  }
 
-          const SizedBox(height: 24),
-
-          // Basic Information
-          _buildSection(
-            title: 'Basic Information',
-            icon: Icons.info_outline,
-            children: [
-              _buildInfoRow('Name', alumni.name),
-              _buildInfoRow('Phone', alumni.phone),
-              _buildInfoRow('Batch Year', alumni.batchYear),
-            ],
+  Widget _buildAppBar(alumni, AlumniDetailProvider provider) {
+    return SliverAppBar(
+      expandedHeight: 320,
+      pinned: true,
+      stretch: true,
+      backgroundColor: AppColors.primary,
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
           ),
-
-          const SizedBox(height: 16),
-
-          // Location Information
-          if (alumni.village.isNotEmpty ||
-              alumni.postOffice.isNotEmpty ||
-              alumni.upazila.isNotEmpty ||
-              alumni.district.isNotEmpty)
-            _buildSection(
-              title: 'Location Information',
-              icon: Icons.location_on,
-              children: [
-                if (alumni.village.isNotEmpty)
-                  _buildInfoRow('Village', alumni.village),
-                if (alumni.postOffice.isNotEmpty)
-                  _buildInfoRow('Post Office', alumni.postOffice),
-                if (alumni.upazila.isNotEmpty)
-                  _buildInfoRow('Upazila', alumni.upazila),
-                if (alumni.district.isNotEmpty)
-                  _buildInfoRow('District', alumni.district),
-              ],
+          child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+        ),
+      ),
+      actions: [
+        IconButton(
+          onPressed: _shareAlumni,
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
             ),
-
-          const SizedBox(height: 16),
-
-          // Professional Information
-          if (alumni.position.isNotEmpty || alumni.currentlyDoing.isNotEmpty)
-            _buildSection(
-              title: 'Professional Information',
-              icon: Icons.work,
-              children: [
-                if (alumni.position.isNotEmpty)
-                  _buildInfoRow('Position', alumni.position),
-                if (alumni.currentlyDoing.isNotEmpty)
-                  _buildInfoRow('Currently Doing', alumni.currentlyDoing,
-                      multiline: true),
-              ],
+            child: const Icon(
+              Icons.share_rounded,
+              color: Colors.white,
+              size: 20,
             ),
-
-          const SizedBox(height: 16),
-
-          // Achievements
-          if (alumni.achievements.isNotEmpty)
-            _buildSection(
-              title: 'Achievements',
-              icon: Icons.emoji_events,
-              children: [
-                _buildInfoRow('', alumni.achievements, multiline: true),
-              ],
-            ),
-
-          const SizedBox(height: 24),
-
-          // Timestamps
-          _buildSection(
-            title: 'Metadata',
-            icon: Icons.access_time,
-            children: [
-              _buildInfoRow(
-                'Created',
-                DateFormat('MMM dd, yyyy - hh:mm a').format(alumni.createdAt),
-              ),
-              _buildInfoRow(
-                'Updated',
-                DateFormat('MMM dd, yyyy - hh:mm a').format(alumni.updatedAt),
-              ),
-            ],
           ),
-
-          const SizedBox(height: 32),
-        ],
+        ),
+        const SizedBox(width: 8),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+          child: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                Hero(
+                  tag: 'avatar_${alumni.id}',
+                  child: GradientRingAvatar(
+                    name: alumni.name,
+                    size: 100,
+                    ringThickness: 5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                      alumni.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(delay: 100.ms)
+                    .slideY(begin: 0.3, delay: 100.ms),
+                if (alumni.position.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                        alumni.position,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 16,
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(delay: 150.ms)
+                      .slideY(begin: 0.3, delay: 150.ms),
+                ],
+                if (alumni.batchYear.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.school_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Batch ${alumni.batchYear}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(delay: 200.ms)
+                      .scale(begin: const Offset(0.8, 0.8), delay: 200.ms),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(dynamic alumni) {
+  Widget _buildBody(alumni) {
     return Container(
-      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        children: [
-          Avatar(
-            name: alumni.name,
-            size: 80,
-          ),
-          const SizedBox(height: 16),
-          ThemedTitle(
-            alumni.name,
-            maxLines: 2,
-          ),
-          if (alumni.position.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ThemedSubtitle(alumni.position),
-          ],
-          if (alumni.batchYear.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (alumni.phone.isNotEmpty) ...[
+              _buildContactActions(alumni),
+              const SizedBox(height: 24),
+            ],
+            if (alumni.village.isNotEmpty ||
+                alumni.postOffice.isNotEmpty ||
+                alumni.upazila.isNotEmpty ||
+                alumni.district.isNotEmpty) ...[
+              _buildSection(
+                title: 'Location',
+                icon: Icons.location_on_rounded,
+                delay: 100,
+                children: [
+                  if (alumni.village.isNotEmpty)
+                    InfoTile(
+                      label: 'Village',
+                      value: alumni.village,
+                      icon: Icons.home_rounded,
+                    ),
+                  if (alumni.postOffice.isNotEmpty)
+                    InfoTile(
+                      label: 'Post Office',
+                      value: alumni.postOffice,
+                      icon: Icons.local_post_office_rounded,
+                    ),
+                  if (alumni.upazila.isNotEmpty)
+                    InfoTile(
+                      label: 'Upazila',
+                      value: alumni.upazila,
+                      icon: Icons.map_rounded,
+                    ),
+                  if (alumni.district.isNotEmpty)
+                    InfoTile(
+                      label: 'District',
+                      value: alumni.district,
+                      icon: Icons.location_city_rounded,
+                    ),
+                ],
               ),
-              child: ThemedText(
-                'Batch ${alumni.batchYear}',
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 20),
+            ],
+            if (alumni.currentlyDoing.isNotEmpty) ...[
+              _buildSection(
+                title: 'Currently Doing',
+                icon: Icons.work_rounded,
+                delay: 200,
+                children: [
+                  InfoTile(
+                    label: '',
+                    value: alumni.currentlyDoing,
+                    icon: Icons.description_rounded,
+                    showCopy: false,
+                  ),
+                ],
               ),
+              const SizedBox(height: 20),
+            ],
+            if (alumni.achievements.isNotEmpty) ...[
+              _buildSection(
+                title: 'Achievements',
+                icon: Icons.emoji_events_rounded,
+                delay: 300,
+                children: [
+                  InfoTile(
+                    label: '',
+                    value: alumni.achievements,
+                    icon: Icons.star_rounded,
+                    iconColor: Colors.amber,
+                    showCopy: false,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+            _buildSection(
+              title: 'Member Since',
+              icon: Icons.access_time_rounded,
+              delay: 400,
+              children: [
+                InfoTile(
+                  label: 'Created',
+                  value: DateFormat('MMMM dd, yyyy').format(alumni.createdAt),
+                  icon: Icons.calendar_today_rounded,
+                ),
+                InfoTile(
+                  label: 'Last Updated',
+                  value: DateFormat('MMMM dd, yyyy').format(alumni.updatedAt),
+                  icon: Icons.update_rounded,
+                ),
+              ],
             ),
+            const SizedBox(height: 24),
           ],
-        ],
+        ),
       ),
     );
+  }
+
+  Widget _buildContactActions(alumni) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ContactButton(
+              icon: Icons.phone_rounded,
+              label: 'Call',
+              onTap: () => _launchPhone(alumni.phone),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _ContactButton(
+              icon: Icons.message_rounded,
+              label: 'Message',
+              onTap: () => _launchSms(alumni.phone),
+              colors: [AppColors.secondaryStart, AppColors.secondaryEnd],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _ContactButton(
+              icon: Icons.copy_rounded,
+              label: 'Copy',
+              onTap: () => _copyToClipboard(alumni.phone, 'Phone number'),
+              colors: [AppColors.info, AppColors.info.withValues(alpha: 0.8)],
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2);
   }
 
   Widget _buildSection({
     required String title,
     required IconData icon,
     required List<Widget> children,
+    int delay = 0,
   }) {
-    return ThemedCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
               children: [
-                Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: 20,
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
                 ),
-                const SizedBox(width: 8),
-                ThemedTitle(title),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
               ],
-            ),
-          ),
-          const Divider(height: 1),
-          // Section Content
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: children,
-            ),
-          ),
-        ],
-      ),
+            )
+            .animate()
+            .fadeIn(delay: Duration(milliseconds: 100 + delay))
+            .slideX(begin: -0.1, delay: Duration(milliseconds: 100 + delay)),
+        const SizedBox(height: 12),
+        GlassCard(
+              padding: const EdgeInsets.all(4),
+              child: Column(children: children),
+            )
+            .animate()
+            .fadeIn(delay: Duration(milliseconds: 200 + delay))
+            .slideY(begin: 0.1, delay: Duration(milliseconds: 200 + delay)),
+      ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool multiline = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (label.isNotEmpty) ...[
-            SizedBox(
-              width: 120,
-              child: ThemedSubtitle(
-                '$label:',
-                maxLines: 2,
-              ),
+  Widget _buildFAB(AlumniDetailProvider provider) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton.small(
+              heroTag: 'edit',
+              onPressed: () => _showEditDialog(provider),
+              backgroundColor: AppColors.info,
+              child: const Icon(Icons.edit_rounded, size: 20),
+            )
+            .animate()
+            .fadeIn(delay: 300.ms)
+            .scale(begin: const Offset(0, 0), delay: 300.ms),
+        const SizedBox(height: 8),
+        FloatingActionButton(
+              heroTag: 'delete',
+              onPressed: () => _confirmDelete(provider),
+              backgroundColor: AppColors.error,
+              child: const Icon(Icons.delete_rounded),
+            )
+            .animate()
+            .fadeIn(delay: 400.ms)
+            .scale(
+              begin: const Offset(0, 0),
+              delay: 400.ms,
+              curve: Curves.elasticOut,
             ),
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: ThemedText(
-              value,
-              maxLines: multiline ? null : 2,
-              overflow: multiline ? null : TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
-  void _showEditDialog(BuildContext context, AlumniDetailProvider provider) {
-    // For now, just show a message
-    // In a full implementation, you would navigate to an edit screen
+  void _showEditDialog(AlumniDetailProvider provider) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit functionality coming soon')),
+      const SnackBar(
+        content: Text('Edit functionality coming soon!'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
-  void _confirmDelete(BuildContext context, AlumniDetailProvider provider) {
+  void _confirmDelete(AlumniDetailProvider provider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const ThemedText('Delete Alumni'),
-        content: const ThemedText(
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Alumni'),
+        content: const Text(
           'Are you sure you want to delete this alumni? This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const ThemedText('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          GradientButton(
+            text: 'Delete',
             onPressed: () async {
+              Navigator.pop(dialogContext);
               await provider.deleteAlumni(widget.alumniId);
-              if (context.mounted) {
-                Navigator.pop(context);
+              if (mounted) {
+                context.read<AlumniListProvider>().loadAlumni();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Alumni deleted successfully'),
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppColors.success,
                   ),
                 );
                 context.pop();
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: const ThemedText(
-              'Delete',
-              color: Colors.white,
-            ),
+            colors: [AppColors.error, AppColors.error.withValues(alpha: 0.8)],
+            height: 44,
+            width: 100,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ContactButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final List<Color>? colors;
+
+  const _ContactButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final gradientColors = colors ?? AppColors.cardGradientColors;
+
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors
+                .map((c) => c.withValues(alpha: 0.15))
+                .toList(),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: gradientColors.first, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: gradientColors.first,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
