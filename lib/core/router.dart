@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../presentation/screens/alumni_list/alumni_list_screen.dart';
 import '../presentation/screens/alumni_detail/alumni_detail_screen.dart';

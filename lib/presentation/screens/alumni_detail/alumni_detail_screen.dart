@@ -12,7 +12,6 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
 import '../../../core/widgets/info_tile.dart';
-import '../../../core/widgets/themed_text.dart';
 import '../../providers/alumni_detail_provider.dart';
 import '../../providers/alumni_list_provider.dart';
 

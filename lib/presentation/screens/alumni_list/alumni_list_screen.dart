@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,7 +9,6 @@ import '../../../core/widgets/animated_avatar.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/info_tile.dart';
-import '../../../core/widgets/themed_text.dart';
 import '../../../data/models/alumni.dart';
 import '../../providers/alumni_list_provider.dart';
 import '../../providers/theme_provider.dart';

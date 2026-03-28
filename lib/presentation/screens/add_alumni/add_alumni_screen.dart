@@ -36,7 +36,7 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
   String _batchYear = DateTime.now().year.toString();
 
   bool _isLoading = false;
-  int _currentStep = 0;
+  final int _currentStep = 0;
 
   final List<_FormSection> _sections = [
     _FormSection(
