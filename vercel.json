@@ -1,5 +1,5 @@
 {
-  "buildCommand": "git clone https://github.com/flutter/flutter.git -b stable _flutter && export PATH=\"$_flutter/bin:$PATH\" && flutter build web",
+  "buildCommand": "git clone https://github.com/flutter/flutter.git -b stable _flutter && _flutter/bin/flutter build web",
   "outputDirectory": "build/web",
   "installCommand": "echo 'No install needed'"
 }
