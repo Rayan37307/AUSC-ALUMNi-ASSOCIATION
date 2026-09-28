@@ -42,6 +42,7 @@ dependencies:
   # Actions
   url_launcher: ^6.2.1
   share_plus: ^7.2.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
@@ -54,3 +55,4 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/images/banners/

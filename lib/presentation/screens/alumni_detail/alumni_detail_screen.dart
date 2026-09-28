@@ -269,38 +269,24 @@ Shared from AUSC Alumni App
               _buildContactActions(alumni),
               const SizedBox(height: 24),
             ],
-            if (alumni.village.isNotEmpty ||
-                alumni.postOffice.isNotEmpty ||
-                alumni.upazila.isNotEmpty ||
-                alumni.district.isNotEmpty) ...[
+            if (alumni.currentAddress.isNotEmpty ||
+                alumni.permanentAddress.isNotEmpty) ...[
               _buildSection(
-                title: 'Location',
+                title: 'Address',
                 icon: Icons.location_on_rounded,
                 delay: 100,
                 children: [
-                  if (alumni.village.isNotEmpty)
+                  if (alumni.currentAddress.isNotEmpty)
                     InfoTile(
-                      label: 'Village',
-                      value: alumni.village,
+                      label: 'Current Address',
+                      value: alumni.currentAddress,
+                      icon: Icons.location_on_rounded,
+                    ),
+                  if (alumni.permanentAddress.isNotEmpty)
+                    InfoTile(
+                      label: 'Permanent Address',
+                      value: alumni.permanentAddress,
                       icon: Icons.home_rounded,
-                    ),
-                  if (alumni.postOffice.isNotEmpty)
-                    InfoTile(
-                      label: 'Post Office',
-                      value: alumni.postOffice,
-                      icon: Icons.local_post_office_rounded,
-                    ),
-                  if (alumni.upazila.isNotEmpty)
-                    InfoTile(
-                      label: 'Upazila',
-                      value: alumni.upazila,
-                      icon: Icons.map_rounded,
-                    ),
-                  if (alumni.district.isNotEmpty)
-                    InfoTile(
-                      label: 'District',
-                      value: alumni.district,
-                      icon: Icons.location_city_rounded,
                     ),
                 ],
               ),
@@ -316,23 +302,6 @@ Shared from AUSC Alumni App
                     label: '',
                     value: alumni.currentlyDoing,
                     icon: Icons.description_rounded,
-                    showCopy: false,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
-            if (alumni.achievements.isNotEmpty) ...[
-              _buildSection(
-                title: 'Achievements',
-                icon: Icons.emoji_events_rounded,
-                delay: 300,
-                children: [
-                  InfoTile(
-                    label: '',
-                    value: alumni.achievements,
-                    icon: Icons.star_rounded,
-                    iconColor: Colors.amber,
                     showCopy: false,
                   ),
                 ],

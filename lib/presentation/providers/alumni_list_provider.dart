@@ -90,7 +90,8 @@ class AlumniListProvider with ChangeNotifier {
       return alumni.name.toLowerCase().contains(queryLower) ||
           alumni.position.toLowerCase().contains(queryLower) ||
           alumni.currentlyDoing.toLowerCase().contains(queryLower) ||
-          alumni.district.toLowerCase().contains(queryLower);
+          alumni.currentAddress.toLowerCase().contains(queryLower) ||
+          alumni.permanentAddress.toLowerCase().contains(queryLower);
     }).toList();
   }
 

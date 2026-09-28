@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/phone.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
 import '../../../core/widgets/info_tile.dart';
@@ -12,6 +13,7 @@ import '../../../core/widgets/themed_text.dart';
 import '../../../core/widgets/year_selector.dart';
 import '../../../data/models/alumni.dart';
 import '../../providers/alumni_list_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AddAlumniScreen extends StatefulWidget {
   const AddAlumniScreen({super.key});
@@ -26,13 +28,10 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
 
   String _name = '';
   String _phone = '';
-  String _village = '';
-  String _postOffice = '';
-  String _upazila = '';
-  String _district = '';
+  String _currentAddress = '';
+  String _permanentAddress = '';
   String _position = '';
   String _currentlyDoing = '';
-  String _achievements = '';
   String _batchYear = DateTime.now().year.toString();
 
   bool _isLoading = false;
@@ -50,16 +49,25 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
       fields: ['batchYear'],
     ),
     _FormSection(
-      title: 'Location',
+      title: 'Address',
       icon: Icons.location_on_rounded,
-      fields: ['village', 'postOffice', 'upazila', 'district'],
+      fields: ['currentAddress', 'permanentAddress'],
     ),
     _FormSection(
       title: 'Professional',
       icon: Icons.work_rounded,
-      fields: ['position', 'currentlyDoing', 'achievements'],
+      fields: ['position', 'currentlyDoing'],
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Start from the signed-in account's details.
+    final auth = context.read<AuthProvider>();
+    _name = auth.displayName;
+    if (auth.phone.isNotEmpty) _phone = Phone.toLocal(auth.phone);
+  }
 
   @override
   void dispose() {
@@ -72,13 +80,10 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
       'name': 0,
       'phone': 1,
       'batchYear': 2,
-      'village': 3,
-      'postOffice': 4,
-      'upazila': 5,
-      'district': 6,
-      'position': 7,
-      'currentlyDoing': 8,
-      'achievements': 9,
+      'currentAddress': 3,
+      'permanentAddress': 4,
+      'position': 5,
+      'currentlyDoing': 6,
     };
     final index = fieldMap[field];
     if (index != null) {
@@ -334,39 +339,23 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
     return Column(
       children: [
         _buildTextField(
-          label: 'Village',
-          hint: 'Enter village name',
+          label: 'Current Address',
+          hint: 'Where you live now',
+          icon: Icons.location_on_rounded,
+          value: _currentAddress,
+          onChanged: (value) => setState(() => _currentAddress = value),
+          textCapitalization: TextCapitalization.words,
+          maxLines: 2,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          label: 'Permanent Address',
+          hint: 'Your home address',
           icon: Icons.home_rounded,
-          value: _village,
-          onChanged: (value) => setState(() => _village = value),
+          value: _permanentAddress,
+          onChanged: (value) => setState(() => _permanentAddress = value),
           textCapitalization: TextCapitalization.words,
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          label: 'Post Office',
-          hint: 'Enter post office',
-          icon: Icons.local_post_office_rounded,
-          value: _postOffice,
-          onChanged: (value) => setState(() => _postOffice = value),
-          textCapitalization: TextCapitalization.words,
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          label: 'Upazila',
-          hint: 'Enter upazila',
-          icon: Icons.map_rounded,
-          value: _upazila,
-          onChanged: (value) => setState(() => _upazila = value),
-          textCapitalization: TextCapitalization.words,
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          label: 'District',
-          hint: 'Enter district',
-          icon: Icons.location_city_rounded,
-          value: _district,
-          onChanged: (value) => setState(() => _district = value),
-          textCapitalization: TextCapitalization.words,
+          maxLines: 2,
         ),
       ],
     );
@@ -392,16 +381,6 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
           onChanged: (value) => setState(() => _currentlyDoing = value),
           textCapitalization: TextCapitalization.sentences,
           maxLines: 3,
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          label: 'Achievements',
-          hint: 'List your achievements',
-          icon: Icons.emoji_events_rounded,
-          value: _achievements,
-          onChanged: (value) => setState(() => _achievements = value),
-          textCapitalization: TextCapitalization.sentences,
-          maxLines: 4,
         ),
       ],
     );
@@ -461,13 +440,10 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
         id: '',
         name: _name,
         phone: _phone,
-        village: _village,
-        postOffice: _postOffice,
-        upazila: _upazila,
-        district: _district,
+        currentAddress: _currentAddress,
+        permanentAddress: _permanentAddress,
         position: _position,
         currentlyDoing: _currentlyDoing,
-        achievements: _achievements,
         batchYear: _batchYear,
         createdAt: now,
         updatedAt: now,

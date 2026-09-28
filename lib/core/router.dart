@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../presentation/screens/alumni_list/alumni_list_screen.dart';
 import '../presentation/screens/alumni_detail/alumni_detail_screen.dart';
+import '../presentation/providers/auth_provider.dart';
 import '../presentation/screens/add_alumni/add_alumni_screen.dart';
+import '../presentation/screens/auth/auth_screens.dart';
+import '../presentation/screens/home/home_screen.dart';
+import '../presentation/screens/school/school_screen.dart';
+import '../presentation/screens/settings/settings_screen.dart';
+import '../presentation/screens/shell/main_shell.dart';
+import '../presentation/screens/teachers/teachers_screen.dart';
 import '../presentation/screens/test_connection/test_connection_screen.dart';
 
 class AppPageTransitions {
@@ -97,21 +104,54 @@ class AppPageTransitions {
   }
 }
 
-final GoRouter router = GoRouter(
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+StatefulShellBranch _tab(String path, Widget screen) {
+  return StatefulShellBranch(
+    routes: [
+      GoRoute(
+        path: path,
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: screen),
+      ),
+    ],
+  );
+}
+
+/// Pages that need a signed-in account. Everything else is public.
+const Set<String> _protectedPaths = {'/add-alumni'};
+
+GoRouter createRouter(AuthProvider auth) => GoRouter(
+  navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
   debugLogDiagnostics: true,
+  refreshListenable: auth,
+  redirect: (context, state) {
+    if (auth.isSignedIn || !_protectedPaths.contains(state.uri.path)) {
+      return null;
+    }
+    return Uri(
+      path: '/login',
+      queryParameters: {'from': state.uri.toString()},
+    ).toString();
+  },
   routes: [
-    GoRoute(
-      path: '/home',
-      name: 'home',
-      pageBuilder: (context, state) => AppPageTransitions.fadeTransition(
-        child: const AlumniListScreen(),
-        state: state,
-      ),
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          MainShell(navigationShell: navigationShell),
+      branches: [
+        _tab('/home', const HomeScreen()),
+        _tab('/alumni', const AlumniListScreen()),
+        _tab('/school', const SchoolScreen()),
+        _tab('/teachers', const TeachersScreen()),
+        _tab('/settings', const SettingsScreen()),
+      ],
     ),
+    // Full-screen routes that cover the bottom navigation bar.
     GoRoute(
       path: '/alumni/:id',
       name: 'alumniDetail',
+      parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
         final id = state.pathParameters['id']!;
         return AppPageTransitions.slideTransition(
@@ -123,18 +163,37 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/add-alumni',
       name: 'addAlumni',
+      parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) => AppPageTransitions.slideUpTransition(
         child: const AddAlumniScreen(),
         state: state,
       ),
     ),
     GoRoute(
+      path: '/login',
+      name: 'login',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppPageTransitions.slideUpTransition(
+        child: LoginScreen(from: state.uri.queryParameters['from']),
+        state: state,
+      ),
+    ),
+    GoRoute(
+      path: '/signup',
+      name: 'signup',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppPageTransitions.slideUpTransition(
+        child: SignUpScreen(from: state.uri.queryParameters['from']),
+        state: state,
+      ),
+    ),
+    GoRoute(
       path: '/test-connection',
       name: 'testConnection',
+      parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) => AppPageTransitions.slideTransition(
         child: const TestConnectionScreen(),
         state: state,
-        slideFromRight: false,
       ),
     ),
   ],

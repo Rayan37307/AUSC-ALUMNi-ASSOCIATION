@@ -1,5 +1,11 @@
 {
   "buildCommand": "git clone https://github.com/flutter/flutter.git -b stable _flutter && _flutter/bin/flutter build web",
   "outputDirectory": "build/web",
-  "installCommand": "echo 'No install needed'"
+  "installCommand": "echo 'No install needed'",
+  "rewrites": [
+    {
+      "source": "/ausc-api/:path*",
+      "destination": "https://ausc.edu.bd/:path*"
+    }
+  ]
 }
