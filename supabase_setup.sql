@@ -146,23 +146,16 @@ CREATE INDEX IF NOT EXISTS idx_photos_created_at ON photos(created_at DESC);
 -- ============================================================================
 -- GRANT ADMIN RIGHTS
 -- ============================================================================
--- Sign up through the app first, then run one of the blocks below in the SQL
--- editor to make that account an admin. Re-running either block is harmless.
+-- An admin is just a row in the admins table above. See supabase_admins.sql for
+-- the full set of grant/revoke queries; the short version is:
 
--- Option A - by email (placeholder email is <phone>@phone.ausc-alumni.app):
---   SELECT id, email FROM auth.users;
---   INSERT INTO admins (user_id, email)
---   VALUES ('PASTE-THE-UUID-HERE', 'PASTE-THE-EMAIL-HERE')
---   ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email;
-
--- Option B - by phone number, no need to look up the UUID:
 --   INSERT INTO admins (user_id, email)
 --   SELECT id, email FROM auth.users
 --   WHERE raw_user_meta_data->>'phone' = '8801712345678'
 --   ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email;
 
--- Remove admin rights:
---   DELETE FROM admins WHERE user_id = 'PASTE-THE-UUID-HERE';
+-- The person must already have signed up through the app. Verify with:
+--   SELECT * FROM admins;
 
 -- Sample data. The WHERE guard keeps re-running the script from piling up
 -- duplicates on an existing table.

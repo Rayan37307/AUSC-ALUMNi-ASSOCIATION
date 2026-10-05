@@ -43,6 +43,10 @@ class AuthProvider with ChangeNotifier {
   /// table. Null while the check is still in flight.
   bool get isAdmin => _isAdmin == true;
 
+  /// Re-check admin rights. Call after granting or revoking a role in
+  /// Supabase so the UI reflects it without forcing a re-login.
+  Future<void> refreshAdminStatus() => _loadAdminStatus();
+
   /// Ask Supabase whether this account is an administrator.
   ///
   /// Relies on the "Admins can read own record" RLS policy, so the query can
