@@ -5,10 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
 import '../../../core/widgets/network_photo.dart';
-import '../../../core/widgets/themed_text.dart';
 import '../../../data/models/photo.dart';
 import '../../providers/auth_provider.dart';
 
@@ -309,47 +309,19 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     }
 
     if (_error.isNotEmpty) {
-      return Center(
-        child: ThemedText(
-          _error,
-          style: const TextStyle(color: AppColors.error),
-          textAlign: TextAlign.center,
-        ),
+      return ErrorBanner(
+        message: _error,
+        onRetry: _loadPhotos,
       );
     }
 
     if (_photos.isEmpty) {
-      return RefreshIndicator(
+      return EmptyState(
+        title: 'No photos yet',
+        subtitle: 'Photos shared by the admin will appear here.',
+        icon: Icons.photo_library_outlined,
         onRefresh: _refresh,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.photo_library_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 12),
-                  const ThemedText(
-                    'No photos yet',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  const ThemedText(
-                    'Photos shared by the admin will appear here.',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        actionLabel: 'Refresh',
       );
     }
 
