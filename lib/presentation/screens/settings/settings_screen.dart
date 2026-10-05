@@ -19,16 +19,24 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _refreshDirectory(BuildContext context) async {
     final provider = context.read<AlumniListProvider>();
     final messenger = ScaffoldMessenger.of(context);
-    await provider.refreshAlumni();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          provider.hasError
-              ? 'Could not refresh the directory'
-              : 'Directory updated · ${provider.allAlumni.length} members',
+    try {
+      await provider.refreshAlumni();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            provider.hasError
+                ? 'Could not refresh the directory'
+                : 'Directory updated · ${provider.allAlumni.length} members',
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Failed to refresh the directory'),
+        ),
+      );
+    }
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {

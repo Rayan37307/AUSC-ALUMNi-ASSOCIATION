@@ -33,8 +33,37 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Environment variables (contains sensitive Firebase credentials)
+# Environment variables (contains sensitive credentials)
 .env
+.env.*
+!.env.example
+
+# Signing keys / keystores / certificates (NEVER commit these)
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.cer
+*.crt
+*.key
+keystore.properties
+key.properties
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+*.mobileprovision
+
+# Gradle / Android build artifacts
+**/build/
+**/.gradle/
+gradle-app.setting
+local.properties
+
+# Stray scratch files
+temp.txt
+*.tmp
+*.bak
 
 # Symbolication related
 app.*.symbols

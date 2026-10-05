@@ -204,23 +204,6 @@ class PulsingAvatar extends StatelessWidget {
     this.isOnline = false,
   });
 
-  String get _initials {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return '?';
-    final parts = trimmed.split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return trimmed[0].toUpperCase();
-  }
-
-  Color get _avatarColor {
-    final trimmed = name.trim().toLowerCase();
-    if (trimmed.isEmpty) return AppColors.avatarColors[0];
-    final index = trimmed.codeUnitAt(0) % AppColors.avatarColors.length;
-    return AppColors.avatarColors[index];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Stack(

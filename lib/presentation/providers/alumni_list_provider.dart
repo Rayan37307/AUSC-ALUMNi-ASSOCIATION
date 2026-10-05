@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import '../../core/constants/app_constants.dart';
 import '../../data/models/alumni.dart';
 import '../../data/repositories/alumni_repository.dart';
 
@@ -12,6 +15,7 @@ class AlumniListProvider with ChangeNotifier {
   bool _isRefreshing = false;
   String _error = '';
   String _searchQuery = '';
+  Timer? _debounceTimer;
 
   AlumniListProvider(this._repository);
 
@@ -64,15 +68,22 @@ class AlumniListProvider with ChangeNotifier {
     }
   }
 
-  /// Search alumni
+  /// Search alumni (debounced to avoid filtering on every keystroke)
   void search(String query) {
-    _searchQuery = query;
-    _applyFilter();
-    notifyListeners();
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(
+      const Duration(milliseconds: AppConstants.debounceMs),
+      () {
+        _searchQuery = query;
+        _applyFilter();
+        notifyListeners();
+      },
+    );
   }
 
   /// Clear search
   void clearSearch() {
+    _debounceTimer?.cancel();
     _searchQuery = '';
     _filteredAlumni = [];
     notifyListeners();
@@ -117,5 +128,11 @@ class AlumniListProvider with ChangeNotifier {
   void clearError() {
     _error = '';
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 }

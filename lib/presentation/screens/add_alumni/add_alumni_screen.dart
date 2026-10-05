@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
@@ -8,8 +7,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/phone.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
-import '../../../core/widgets/info_tile.dart';
-import '../../../core/widgets/themed_text.dart';
 import '../../../core/widgets/year_selector.dart';
 import '../../../data/models/alumni.dart';
 import '../../providers/alumni_list_provider.dart';
@@ -33,32 +30,9 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
   String _position = '';
   String _currentlyDoing = '';
   String _batchYear = DateTime.now().year.toString();
+  String? _bloodGroup;
 
   bool _isLoading = false;
-  final int _currentStep = 0;
-
-  final List<_FormSection> _sections = [
-    _FormSection(
-      title: 'Basic Info',
-      icon: Icons.person_rounded,
-      fields: ['name', 'phone'],
-    ),
-    _FormSection(
-      title: 'Batch Year',
-      icon: Icons.school_rounded,
-      fields: ['batchYear'],
-    ),
-    _FormSection(
-      title: 'Address',
-      icon: Icons.location_on_rounded,
-      fields: ['currentAddress', 'permanentAddress'],
-    ),
-    _FormSection(
-      title: 'Professional',
-      icon: Icons.work_rounded,
-      fields: ['position', 'currentlyDoing'],
-    ),
-  ];
 
   @override
   void initState() {
@@ -75,25 +49,6 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
     super.dispose();
   }
 
-  void _scrollToField(String field) {
-    final fieldMap = {
-      'name': 0,
-      'phone': 1,
-      'batchYear': 2,
-      'currentAddress': 3,
-      'permanentAddress': 4,
-      'position': 5,
-      'currentlyDoing': 6,
-    };
-    final index = fieldMap[field];
-    if (index != null) {
-      _scrollController.animateTo(
-        index * 80.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,36 +73,28 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
             ),
           ),
           child: SafeArea(
-            child: Column(
-              children: [
-                _buildProgressIndicator(),
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                      children: [
-                        _buildSection(0),
-                        _buildNameField(),
-                        _buildPhoneField(),
-                        const SizedBox(height: 24),
-                        _buildSection(1),
-                        _buildBatchYearSelector(),
-                        const SizedBox(height: 24),
-                        _buildSection(2),
-                        _buildLocationFields(),
-                        const SizedBox(height: 24),
-                        _buildSection(3),
-                        _buildProfessionalFields(),
-                        const SizedBox(height: 32),
-                        _buildSubmitButton(),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                children: [
+                  _buildNameField(),
+                  const SizedBox(height: 16),
+                  _buildPhoneField(),
+                  const SizedBox(height: 24),
+                  _buildBatchYearSelector(),
+                  const SizedBox(height: 24),
+                  _buildBloodGroupField(),
+                  const SizedBox(height: 24),
+                  _buildLocationFields(),
+                  const SizedBox(height: 24),
+                  _buildProfessionalFields(),
+                  const SizedBox(height: 32),
+                  _buildSubmitButton(),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
@@ -170,90 +117,7 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
         ),
       ),
       title: const Text('Add Alumni'),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                '${_currentStep + 1}/${_sections.length}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
-  }
-
-  Widget _buildProgressIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: List.generate(_sections.length, (index) {
-          final isActive = index <= _currentStep;
-          final isCurrent = index == _currentStep;
-
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 4,
-                decoration: BoxDecoration(
-                  gradient: isActive ? AppColors.primaryGradient : null,
-                  color: isActive ? null : Theme.of(context).dividerColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildSection(int index) {
-    final section = _sections[index];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(section.icon, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                section.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: 50 * index))
-        .slideX(begin: -0.1, delay: Duration(milliseconds: 50 * index));
   }
 
   Widget _buildNameField() {
@@ -331,6 +195,27 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
             maxYear: DateTime.now().year + 5,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBloodGroupField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _ModernTextField(
+        label: 'Blood Group',
+        hint: 'e.g., A+, B-, AB+, O-',
+        icon: Icons.bloodtype_rounded,
+        value: _bloodGroup ?? '',
+        onChanged: (value) => setState(() => _bloodGroup = value.isNotEmpty ? value : null),
+        validator: (value) {
+          if (value != null && value.trim().isEmpty) {
+            return 'Blood group is required';
+          }
+          return null;
+        },
+        onSaved: (value) => _bloodGroup = value != null ? value.trim() : null,
+        textCapitalization: TextCapitalization.none,
       ),
     );
   }
@@ -445,6 +330,7 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
         position: _position,
         currentlyDoing: _currentlyDoing,
         batchYear: _batchYear,
+        bloodGroup: _bloodGroup,
         createdAt: now,
         updatedAt: now,
       );
@@ -480,14 +366,6 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
       }
     }
   }
-}
-
-class _FormSection {
-  final String title;
-  final IconData icon;
-  final List<String> fields;
-
-  _FormSection({required this.title, required this.icon, required this.fields});
 }
 
 class _ModernTextField extends StatefulWidget {
@@ -600,8 +478,8 @@ class _ModernTextFieldState extends State<_ModernTextField> {
                 color: _isFocused
                     ? AppColors.primary.withValues(alpha: 0.1)
                     : (isDark
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.lightSurfaceVariant),
+                        ? AppColors.darkSurfaceVariant
+                        : AppColors.lightSurfaceVariant),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -609,8 +487,8 @@ class _ModernTextFieldState extends State<_ModernTextField> {
                 color: _isFocused
                     ? AppColors.primary
                     : (isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary),
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary),
                 size: 20,
               ),
             ),

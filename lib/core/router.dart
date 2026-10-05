@@ -6,6 +6,7 @@ import '../presentation/providers/auth_provider.dart';
 import '../presentation/screens/add_alumni/add_alumni_screen.dart';
 import '../presentation/screens/auth/auth_screens.dart';
 import '../presentation/screens/home/home_screen.dart';
+import '../presentation/screens/photo_gallery/photo_gallery_screen.dart';
 import '../presentation/screens/school/school_screen.dart';
 import '../presentation/screens/settings/settings_screen.dart';
 import '../presentation/screens/shell/main_shell.dart';
@@ -124,7 +125,7 @@ const Set<String> _protectedPaths = {'/add-alumni'};
 GoRouter createRouter(AuthProvider auth) => GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
-  debugLogDiagnostics: true,
+  debugLogDiagnostics: false,
   refreshListenable: auth,
   redirect: (context, state) {
     if (auth.isSignedIn || !_protectedPaths.contains(state.uri.path)) {
@@ -145,6 +146,7 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
         _tab('/school', const SchoolScreen()),
         _tab('/teachers', const TeachersScreen()),
         _tab('/settings', const SettingsScreen()),
+        _tab('/photo-gallery', const PhotoGalleryScreen()),
       ],
     ),
     // Full-screen routes that cover the bottom navigation bar.

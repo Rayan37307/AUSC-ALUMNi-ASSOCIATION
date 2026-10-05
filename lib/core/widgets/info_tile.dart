@@ -284,7 +284,6 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = gradientColors ?? AppColors.cardGradientColors;
 
     return Center(

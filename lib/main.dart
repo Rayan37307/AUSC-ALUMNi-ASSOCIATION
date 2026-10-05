@@ -33,18 +33,33 @@ void main() async {
   final auth = AuthProvider();
   final router = createRouter(auth);
 
-  runApp(MyApp(prefs: prefs, auth: auth, router: router));
+  runApp(MyApp(
+    prefs: prefs,
+    auth: auth,
+    router: router,
+    supabaseInitialized: _supabaseInitialized,
+  ));
 }
 
+bool _supabaseInitialized = false;
+
 Future<void> _initializeSupabase() async {
+  final url = dotenv.env['SUPABASE_URL'] ?? '';
+  final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+
+  if (url.isEmpty || anonKey.isEmpty) {
+    debugPrint('Supabase configuration missing: SUPABASE_URL or SUPABASE_ANON_KEY not set in .env');
+    return;
+  }
+
   try {
     await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL'] ?? '',
-      anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+      url: url,
+      anonKey: anonKey,
     );
+    _supabaseInitialized = true;
   } catch (e) {
     debugPrint('Supabase initialization error: $e');
-    // Continue without Supabase for development/testing
   }
 }
 
@@ -52,12 +67,14 @@ class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
   final AuthProvider auth;
   final GoRouter router;
+  final bool supabaseInitialized;
 
   const MyApp({
     super.key,
     required this.prefs,
     required this.auth,
     required this.router,
+    required this.supabaseInitialized,
   });
 
   @override
@@ -69,6 +86,37 @@ class MyApp extends StatelessWidget {
       remoteDataSource: remoteDataSource,
       localCacheSource: localCacheSource,
     );
+
+    if (!supabaseInitialized) {
+      return MaterialApp(
+        title: 'AUSC Alumni Association',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.cloud_off_rounded, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Connection Error',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Unable to connect to the server. Please check your configuration and restart the app.',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return MultiProvider(
       providers: [

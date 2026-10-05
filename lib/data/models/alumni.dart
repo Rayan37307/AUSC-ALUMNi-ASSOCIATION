@@ -8,6 +8,7 @@ class Alumni {
   final String currentlyDoing;
   final String batchYear;
   final String position;
+  final String? bloodGroup;  // NEW: Blood group option
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -20,6 +21,7 @@ class Alumni {
     this.currentlyDoing = '',
     required this.batchYear,
     this.position = '',
+    this.bloodGroup,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -35,6 +37,7 @@ class Alumni {
       currentlyDoing: data['currently_doing'] ?? '',
       batchYear: data['batch_year'] ?? '',
       position: data['position'] ?? '',
+      bloodGroup: data['blood_group'] as String?,  // NEW
       createdAt: data['created_at'] != null 
           ? DateTime.parse(data['created_at']) 
           : DateTime.now(),
@@ -54,6 +57,7 @@ class Alumni {
       'currently_doing': currentlyDoing,
       'batch_year': batchYear,
       'position': position,
+      'blood_group': bloodGroup,  // NEW
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -69,6 +73,7 @@ class Alumni {
       'currently_doing': currentlyDoing,
       'batch_year': batchYear,
       'position': position,
+      'blood_group': bloodGroup,
       'updated_at': DateTime.now().toIso8601String(),
     };
   }
@@ -83,6 +88,7 @@ class Alumni {
     String? currentlyDoing,
     String? batchYear,
     String? position,
+    String? bloodGroup,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -95,6 +101,7 @@ class Alumni {
       currentlyDoing: currentlyDoing ?? this.currentlyDoing,
       batchYear: batchYear ?? this.batchYear,
       position: position ?? this.position,
+      bloodGroup: bloodGroup ?? this.bloodGroup,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -111,6 +118,7 @@ class Alumni {
       'currentlyDoing': currentlyDoing,
       'batchYear': batchYear,
       'position': position,
+      'bloodGroup': bloodGroup,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -127,6 +135,7 @@ class Alumni {
       currentlyDoing: json['currentlyDoing'] ?? '',
       batchYear: json['batchYear'] ?? '',
       position: json['position'] ?? '',
+      bloodGroup: json['bloodGroup'] as String?,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );

@@ -12,6 +12,7 @@ import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
 import '../../../core/widgets/info_tile.dart';
+import '../../../data/models/alumni.dart';
 import '../../providers/alumni_detail_provider.dart';
 import '../../providers/alumni_list_provider.dart';
 
@@ -89,19 +90,16 @@ Shared from AUSC Alumni App
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => context.read<AlumniDetailProvider>(),
-      child: Consumer<AlumniDetailProvider>(
-        builder: (context, provider, child) {
-          return Scaffold(
-            extendBodyBehindAppBar: true,
-            body: _buildContent(provider),
-            floatingActionButton: provider.alumni != null
-                ? _buildFAB(provider)
-                : null,
-          );
-        },
-      ),
+    return Consumer<AlumniDetailProvider>(
+      builder: (context, provider, child) {
+        return Scaffold(
+          extendBodyBehindAppBar: true,
+          body: _buildContent(provider),
+          floatingActionButton: provider.alumni != null
+              ? _buildFAB(provider)
+              : null,
+        );
+      },
     );
   }
 
@@ -134,7 +132,7 @@ Shared from AUSC Alumni App
     );
   }
 
-  Widget _buildAppBar(alumni, AlumniDetailProvider provider) {
+  Widget _buildAppBar(Alumni alumni, AlumniDetailProvider provider) {
     return SliverAppBar(
       expandedHeight: 320,
       pinned: true,
@@ -254,7 +252,7 @@ Shared from AUSC Alumni App
     );
   }
 
-  Widget _buildBody(alumni) {
+  Widget _buildBody(Alumni alumni) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -332,7 +330,7 @@ Shared from AUSC Alumni App
     );
   }
 
-  Widget _buildContactActions(alumni) {
+  Widget _buildContactActions(Alumni alumni) {
     return GlassCard(
       padding: const EdgeInsets.all(16),
       child: Row(

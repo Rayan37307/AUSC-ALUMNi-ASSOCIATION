@@ -20,7 +20,7 @@ class BannerCarousel extends StatefulWidget {
   State<BannerCarousel> createState() => _BannerCarouselState();
 }
 
-class _BannerCarouselState extends State<BannerCarousel> {
+class _BannerCarouselState extends State<BannerCarousel> with WidgetsBindingObserver {
   final PageController _controller = PageController();
   Timer? _timer;
   int _page = 0;
@@ -28,14 +28,25 @@ class _BannerCarouselState extends State<BannerCarousel> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startTimer();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _timer?.cancel();
+    } else if (state == AppLifecycleState.resumed) {
+      _startTimer();
+    }
   }
 
   void _startTimer() {

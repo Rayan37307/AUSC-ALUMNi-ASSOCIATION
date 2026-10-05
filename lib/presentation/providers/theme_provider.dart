@@ -9,15 +9,10 @@ class ThemeProvider with ChangeNotifier {
   bool _isDarkMode = false;
 
   ThemeProvider(this._prefs) {
-    _loadTheme();
+    _isDarkMode = _prefs.getBool(_themeKey) ?? false;
   }
 
   bool get isDarkMode => _isDarkMode;
-
-  void _loadTheme() {
-    _isDarkMode = _prefs.getBool(_themeKey) ?? false;
-    notifyListeners();
-  }
 
   Future<void> toggleTheme() async {
     _isDarkMode = !_isDarkMode;

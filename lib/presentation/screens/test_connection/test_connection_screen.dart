@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Test Supabase connection screen
 /// Navigate to this screen by adding: /test-connection route
@@ -145,10 +146,10 @@ Check your .env file and try again.
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: _status.contains('✅') 
-                      ? Colors.green.withOpacity(0.1)
+                      ? Colors.green.withValues(alpha: 0.1)
                       : _status.contains('❌') 
-                        ? Colors.red.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.1),
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: SingleChildScrollView(
@@ -171,9 +172,11 @@ Check your .env file and try again.
                   const Divider(),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      // Open Supabase SQL Editor
-                      launchUrl('https://app.supabase.com/project/mefthrvjlcwsoflvwuvj/sql/new');
+                    onPressed: () async {
+                      final uri = Uri.parse('https://supabase.com/dashboard');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
                     },
                     icon: const Icon(Icons.open_in_browser),
                     label: const Text('Open SQL Editor'),
@@ -192,13 +195,4 @@ Check your .env file and try again.
     );
   }
 
-  void launchUrl(String url) {
-    // Simple placeholder - in real app use url_launcher package
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening: $url'),
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
 }

@@ -95,7 +95,11 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _auth?.signOut();
+    try {
+      await _auth?.signOut();
+    } catch (e) {
+      debugPrint('Sign out error: $e');
+    }
   }
 
   String _friendlyMessage(AuthException e) {

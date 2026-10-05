@@ -1,16 +1,33 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/alumni.dart';
+import '../../models/photo.dart';
 
 /// Remote data source for Supabase
 class RemoteDataSource {
-  final SupabaseClient _client;
+  final SupabaseClient? _client;
 
-  RemoteDataSource() : _client = Supabase.instance.client;
+  RemoteDataSource() : _client = _resolveClient();
+
+  static SupabaseClient? _resolveClient() {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  SupabaseClient get _safeClient {
+    final client = _client;
+    if (client == null) {
+      throw Exception('Supabase is not initialized. Check your configuration.');
+    }
+    return client;
+  }
 
   /// Get all alumni ordered by creation date (newest first)
   Future<List<Alumni>> getAlumni() async {
     try {
-      final response = await _client
+      final response = await _safeClient
           .from('alumni')
           .select()
           .order('created_at', ascending: false);
@@ -28,7 +45,7 @@ class RemoteDataSource {
   /// Get a single alumni by ID
   Future<Alumni> getAlumniById(String id) async {
     try {
-      final response = await _client
+      final response = await _safeClient
           .from('alumni')
           .select()
           .eq('id', id)
@@ -43,7 +60,7 @@ class RemoteDataSource {
   /// Add a new alumni
   Future<Alumni> addAlumni(Alumni alumni) async {
     try {
-      final response = await _client
+      final response = await _safeClient
           .from('alumni')
           .insert(alumni.toSupabaseInsert())
           .select()
@@ -58,7 +75,7 @@ class RemoteDataSource {
   /// Update an existing alumni
   Future<void> updateAlumni(Alumni alumni) async {
     try {
-      await _client
+      await _safeClient
           .from('alumni')
           .update(alumni.toSupabaseUpdate())
           .eq('id', alumni.id);
@@ -70,7 +87,7 @@ class RemoteDataSource {
   /// Delete an alumni
   Future<void> deleteAlumni(String id) async {
     try {
-      await _client
+      await _safeClient
           .from('alumni')
           .delete()
           .eq('id', id);
@@ -82,7 +99,7 @@ class RemoteDataSource {
   /// Search alumni by name
   Future<List<Alumni>> searchAlumni(String query) async {
     try {
-      final response = await _client
+      final response = await _safeClient
           .from('alumni')
           .select()
           .order('created_at', ascending: false);
@@ -97,6 +114,39 @@ class RemoteDataSource {
           .toList();
     } catch (e) {
       throw Exception('Failed to search alumni: $e');
+    }
+  }
+
+  /// Get all photos
+  Future<List<Photo>> getPhotos() async {
+    try {
+      final response = await _safeClient
+          .from('photos')
+          .select('*')
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((row) => Photo.fromSupabase(row as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw Exception('Database error: ${e.message}. Please create the photos table in Supabase.');
+    } catch (e) {
+      throw Exception('Failed to fetch photos: $e');
+    }
+  }
+
+  /// Add a new photo (admin only)
+  Future<Photo> addPhoto(Photo photo) async {
+    try {
+      final response = await _safeClient
+          .from('photos')
+          .insert(photo.toSupabaseInsert())
+          .select()
+          .single();
+
+      return Photo.fromSupabase(response);
+    } catch (e) {
+      throw Exception('Failed to add photo: $e');
     }
   }
 }
