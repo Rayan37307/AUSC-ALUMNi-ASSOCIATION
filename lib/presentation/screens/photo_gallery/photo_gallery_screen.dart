@@ -37,6 +37,11 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
   @override
   void initState() {
     super.initState();
+    // Re-check on entry so a role granted in Supabase shows up without a
+    // re-login. Cheap: one indexed query on the caller's own row.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthProvider>().refreshAdminStatus();
+    });
     _loadPhotos();
   }
 
@@ -46,7 +51,9 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     super.dispose();
   }
 
-  bool get _isAdmin => context.read<AuthProvider>().isAdmin;
+  /// Must be a `watch`, not a `read`: admin rights resolve asynchronously after
+  /// sign-in, so this has to rebuild once `AuthProvider` reports the result.
+  bool get _isAdmin => context.watch<AuthProvider>().isAdmin;
 
   Future<void> _loadPhotos() async {
     if (mounted) {
@@ -57,10 +64,12 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     }
 
     try {
-      final response = await Supabase.instance.client
+      final response = debugPrint('[gallery] loading photos...');
+      await Supabase.instance.client
           .from('photos')
           .select('*')
           .order('created_at', ascending: false);
+      debugPrint('[gallery] photos loaded');
 
       final photos = (response as List)
           .map((row) => Photo.fromSupabase(row as Map<String, dynamic>))

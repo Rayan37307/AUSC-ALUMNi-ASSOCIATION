@@ -68,12 +68,17 @@ class AuthProvider with ChangeNotifier {
           .eq('user_id', currentUser.id)
           .limit(1);
       final admin = rows.isNotEmpty;
+      debugPrint(
+        'Admin check: user=${currentUser.id} '
+        'phone=${currentUser.userMetadata?['phone']} '
+        'rows=${rows.length} isAdmin=$admin',
+      );
       if (_isAdmin != admin) {
         _isAdmin = admin;
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Admin check failed: $e');
+      debugPrint('Admin check failed (is the admins table created?): $e');
       _isAdmin = false;
     }
   }
