@@ -145,8 +145,8 @@ GoRouter createRouter(AuthProvider auth) => GoRouter(
         _tab('/alumni', const AlumniListScreen()),
         _tab('/school', const SchoolScreen()),
         _tab('/teachers', const TeachersScreen()),
-        _tab('/settings', const SettingsScreen()),
         _tab('/photo-gallery', const PhotoGalleryScreen()),
+        _tab('/settings', const SettingsScreen()),
       ],
     ),
     // Full-screen routes that cover the bottom navigation bar.

@@ -17,11 +17,20 @@ class AuthProvider with ChangeNotifier {
 
   GoTrueClient? _auth;
   StreamSubscription<AuthState>? _subscription;
+  bool? _isAdmin;
 
   AuthProvider() {
     try {
       _auth = Supabase.instance.client.auth;
-      _subscription = _auth!.onAuthStateChange.listen((_) => notifyListeners());
+      _subscription = _auth!.onAuthStateChange.listen((event) {
+        notifyListeners();
+        if (event.session == null) {
+          _isAdmin = false;
+        } else {
+          _loadAdminStatus();
+        }
+      });
+      if (isSignedIn) _loadAdminStatus();
     } catch (e) {
       debugPrint('Auth unavailable: $e');
     }
@@ -29,6 +38,41 @@ class AuthProvider with ChangeNotifier {
 
   User? get user => _auth?.currentUser;
   bool get isSignedIn => user != null;
+
+  /// True when the signed-in account is listed in the Supabase `admins`
+  /// table. Null while the check is still in flight.
+  bool get isAdmin => _isAdmin == true;
+
+  /// Ask Supabase whether this account is an administrator.
+  ///
+  /// Relies on the "Admins can read own record" RLS policy, so the query can
+  /// only ever return the caller's own row.
+  Future<void> _loadAdminStatus() async {
+    final currentUser = _auth?.currentUser;
+    if (currentUser == null) {
+      if (_isAdmin != false) {
+        _isAdmin = false;
+        notifyListeners();
+      }
+      return;
+    }
+
+    try {
+      final rows = await Supabase.instance.client
+          .from('admins')
+          .select('user_id')
+          .eq('user_id', currentUser.id)
+          .limit(1);
+      final admin = rows.isNotEmpty;
+      if (_isAdmin != admin) {
+        _isAdmin = admin;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Admin check failed: $e');
+      _isAdmin = false;
+    }
+  }
 
   String get displayName =>
       (user?.userMetadata?['full_name'] as String?)?.trim() ?? '';
@@ -96,6 +140,7 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> signOut() async {
     try {
+      _isAdmin = false;
       await _auth?.signOut();
     } catch (e) {
       debugPrint('Sign out error: $e');

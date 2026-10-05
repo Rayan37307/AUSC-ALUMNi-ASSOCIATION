@@ -64,8 +64,21 @@ class _BottomNav extends StatelessWidget {
   static const _items = [
     _NavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
     _NavItem(Icons.groups_2_outlined, Icons.groups_2_rounded, 'Alumni'),
-    _NavItem(Icons.account_balance_outlined, Icons.account_balance_rounded, 'School'),
-    _NavItem(Icons.co_present_outlined, Icons.co_present_rounded, 'Teachers'),
+    _NavItem(
+      Icons.account_balance_outlined,
+      Icons.account_balance_rounded,
+      'School',
+    ),
+    _NavItem(
+      Icons.co_present_outlined,
+      Icons.co_present_rounded,
+      'Teachers',
+    ),
+    _NavItem(
+      Icons.photo_library_outlined,
+      Icons.photo_library_rounded,
+      'Gallery',
+    ),
     _NavItem(Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
   ];
 

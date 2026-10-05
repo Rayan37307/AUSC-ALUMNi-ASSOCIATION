@@ -135,7 +135,7 @@ class RemoteDataSource {
     }
   }
 
-  /// Add a new photo (admin only)
+  /// Register an uploaded photo. Admin only (enforced by RLS).
   Future<Photo> addPhoto(Photo photo) async {
     try {
       final response = await _safeClient
@@ -147,6 +147,15 @@ class RemoteDataSource {
       return Photo.fromSupabase(response);
     } catch (e) {
       throw Exception('Failed to add photo: $e');
+    }
+  }
+
+  /// Delete a photo row. Admin only (enforced by RLS).
+  Future<void> deletePhoto(String id) async {
+    try {
+      await _safeClient.from('photos').delete().eq('id', id);
+    } catch (e) {
+      throw Exception('Failed to delete photo: $e');
     }
   }
 }
