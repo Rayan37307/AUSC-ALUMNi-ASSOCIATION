@@ -64,15 +64,15 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
     }
 
     try {
-      final response = debugPrint('[gallery] loading photos...');
-      await Supabase.instance.client
+      debugPrint('[gallery] loading photos...');
+      final response = await Supabase.instance.client
           .from('photos')
           .select('*')
           .order('created_at', ascending: false);
-      debugPrint('[gallery] photos loaded');
+      debugPrint('[gallery] loaded ${response.length} photos');
 
-      final photos = (response as List)
-          .map((row) => Photo.fromSupabase(row as Map<String, dynamic>))
+      final photos = response
+          .map((row) => Photo.fromSupabase(Map<String, dynamic>.from(row)))
           .toList();
 
       if (!mounted) return;
@@ -81,12 +81,12 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('Load photos failed: $e');
       if (!mounted) return;
       setState(() {
-        _error = 'Could not load photos. Pull to retry.';
+        _error = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
-      debugPrint('Load photos failed: $e');
     }
   }
 

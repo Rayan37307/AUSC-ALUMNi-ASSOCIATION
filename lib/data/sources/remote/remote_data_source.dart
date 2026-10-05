@@ -125,8 +125,8 @@ class RemoteDataSource {
           .select('*')
           .order('created_at', ascending: false);
 
-      return (response as List)
-          .map((row) => Photo.fromSupabase(row as Map<String, dynamic>))
+      return response
+          .map((row) => Photo.fromSupabase(Map<String, dynamic>.from(row)))
           .toList();
     } on PostgrestException catch (e) {
       throw Exception('Database error: ${e.message}. Please create the photos table in Supabase.');
