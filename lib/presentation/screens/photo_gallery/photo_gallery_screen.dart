@@ -283,7 +283,6 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       child: TextField(
                         controller: _captionController,
                         textInputAction: TextInputAction.done,
-                        onChanged: (_) => setState(() {}),
                         decoration: const InputDecoration(
                           isDense: true,
                           hintText: 'Caption (optional)',
@@ -292,9 +291,13 @@ class _PhotoGalleryScreenState extends State<PhotoGalleryScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
+                    // A Row hands children unbounded width, so this must have an
+                    // explicit width. GradientButton defaults to double.infinity,
+                    // which fails layout and leaves the button un-tappable.
                     GradientButton(
                       text: _isUploading ? 'Adding' : 'Add',
                       icon: Icons.upload_rounded,
+                      width: 108,
                       height: 46,
                       borderRadius: 100,
                       isLoading: _isUploading,
