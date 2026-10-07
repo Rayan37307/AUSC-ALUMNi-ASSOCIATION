@@ -1,0 +1,72 @@
+name: Android release bundle
+
+# Builds a signed release AAB.
+#
+# This runs on ubuntu-latest rather than a Windows runner on purpose: Smart App
+# Control on Windows reputation-blocks the unsigned `gen_snapshot.exe` binaries
+# for the arm64/x64 release engine, which fails the AOT step with "Release app
+# bundle failed to strip debug symbols from native libraries".
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-appbundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Write android/key.properties
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "KEYSTORE_BASE64 secret is not set"; exit 1; }
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Write .env
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          test -n "$ENV_FILE" || { echo "ENV_FILE secret is not set"; exit 1; }
+          printf '%s' "$ENV_FILE" > .env
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build release app bundle
+        run: flutter build appbundle --release
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+          if-no-files-found: error

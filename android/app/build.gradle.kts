@@ -39,6 +39,14 @@ android {
         versionName = flutter.versionName
     }
 
+    // Keep only the ABIs the Play Store actually needs. Splitting the AAB per
+    // ABI keeps each download small; see `flutter build appbundle`.
+    defaultConfig {
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
+    }
+
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
@@ -51,6 +59,19 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+
+    bundle {
+        language {
+            // Ship every translation, including ones without a Play listing.
+            enableSplit = false
         }
     }
 }
