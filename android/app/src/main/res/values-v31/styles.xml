@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (API 31) draws the splash itself, using these attributes in
+     place of windowBackground. The app is dark-only, so the background is the
+     same dark colour used by the legacy splash and by AppColors.darkBackground. -->
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_logo</item>
+    </style>
+</resources>

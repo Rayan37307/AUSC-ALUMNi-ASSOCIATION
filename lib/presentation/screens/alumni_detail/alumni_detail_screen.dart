@@ -15,6 +15,7 @@ import '../../../core/widgets/info_tile.dart';
 import '../../../data/models/alumni.dart';
 import '../../providers/alumni_detail_provider.dart';
 import '../../providers/alumni_list_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AlumniDetailScreen extends StatefulWidget {
   final String alumniId;
@@ -95,12 +96,25 @@ Shared from AUSC Alumni App
         return Scaffold(
           extendBodyBehindAppBar: true,
           body: _buildContent(provider),
-          floatingActionButton: provider.alumni != null
+          floatingActionButton: provider.alumni != null && _canManage(provider.alumni!)
               ? _buildFAB(provider)
               : null,
         );
       },
     );
+  }
+
+  /// RLS on the alumni table only lets a member update or delete a row they
+  /// own, with admins allowed to manage any row. Hide the buttons for everyone
+  /// else so the UI does not offer an action the server will reject.
+  bool _canManage(Alumni alumni) {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return false;
+    if (alumni.ownerId == null || alumni.ownerId!.isEmpty) {
+      // Unowned rows (created before ownership existed) are admin-only.
+      return context.read<AuthProvider>().isAdmin;
+    }
+    return alumni.ownerId == userId || context.read<AuthProvider>().isAdmin;
   }
 
   Widget _buildContent(AlumniDetailProvider provider) {

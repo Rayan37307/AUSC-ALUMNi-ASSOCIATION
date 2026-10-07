@@ -31,6 +31,7 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
   String _currentlyDoing = '';
   String _batchYear = DateTime.now().year.toString();
   String? _bloodGroup;
+  bool _bloodGroupConsent = false;
 
   bool _isLoading = false;
 
@@ -86,6 +87,8 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
                   _buildBatchYearSelector(),
                   const SizedBox(height: 24),
                   _buildBloodGroupField(),
+                  const SizedBox(height: 12),
+                  _buildBloodGroupConsent(),
                   const SizedBox(height: 24),
                   _buildLocationFields(),
                   const SizedBox(height: 24),
@@ -201,21 +204,67 @@ class _AddAlumniScreenState extends State<AddAlumniScreen> {
 
   Widget _buildBloodGroupField() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: _ModernTextField(
-        label: 'Blood Group',
+        label: 'Blood Group (optional)',
         hint: 'e.g., A+, B-, AB+, O-',
         icon: Icons.bloodtype_rounded,
         value: _bloodGroup ?? '',
-        onChanged: (value) => setState(() => _bloodGroup = value.isNotEmpty ? value : null),
-        validator: (value) {
-          if (value != null && value.trim().isEmpty) {
-            return 'Blood group is required';
-          }
-          return null;
-        },
-        onSaved: (value) => _bloodGroup = value != null ? value.trim() : null,
+        // Only keep a value the member has explicitly agreed to share.
+        onChanged: (value) => setState(
+          () => _bloodGroup = _bloodGroupConsent && value.trim().isNotEmpty
+              ? value.trim()
+              : null,
+        ),
+        validator: (_) => null,
+        onSaved: (value) => _bloodGroup = _bloodGroupConsent && value != null && value.trim().isNotEmpty
+            ? value.trim()
+            : null,
         textCapitalization: TextCapitalization.none,
+      ),
+    );
+  }
+
+  /// Blood type is health-adjacent personal data, so sharing it has to be an
+  /// active choice rather than a default. Withdrawing the consent hides it from
+  /// the directory again on the next save.
+  Widget _buildBloodGroupConsent() {
+    return InkWell(
+      onTap: () => setState(() => _bloodGroupConsent = !_bloodGroupConsent),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _bloodGroupConsent,
+                onChanged: (value) {
+                  setState(() {
+                    _bloodGroupConsent = value ?? false;
+                    if (!_bloodGroupConsent) _bloodGroup = null;
+                  });
+                },
+                activeColor: AppColors.primary,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Share my blood group so other members can contact me if I donate.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
+                      height: 1.35,
+                    ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

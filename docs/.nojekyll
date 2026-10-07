@@ -1,0 +1,2 @@
+# Keep this so GitHub Pages serves the folder as-is, without Jekyll
+# trying to process the HTML and ignoring files beginning with underscore.

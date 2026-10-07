@@ -9,7 +9,7 @@ import '../../../core/widgets/ui_kit.dart';
 import '../../../data/content/school_content.dart';
 import '../../providers/alumni_list_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
+
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -63,7 +63,6 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
@@ -104,22 +103,6 @@ class SettingsScreen extends StatelessWidget {
                         onTap: () => context.push('/signup'),
                       ),
                     ],
-            ),
-            _Group(
-              title: 'Appearance',
-              tiles: [
-                _Tile(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Dark mode',
-                  subtitle: 'Easier on the eyes at night',
-                  trailing: Switch.adaptive(
-                    value: themeProvider.isDarkMode,
-                    activeTrackColor: AppColors.primary,
-                    onChanged: themeProvider.setDarkMode,
-                  ),
-                  onTap: themeProvider.toggleTheme,
-                ),
-              ],
             ),
             _Group(
               title: 'Directory',

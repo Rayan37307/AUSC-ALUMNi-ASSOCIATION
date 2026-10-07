@@ -9,6 +9,10 @@ class Alumni {
   final String batchYear;
   final String position;
   final String? bloodGroup;  // NEW: Blood group option
+  /// Auth user id of the member who added this entry. RLS policies allow a
+  /// member to edit or delete only rows they own, so the app uses this to
+  /// decide whether to show edit and delete controls.
+  final String? ownerId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,6 +26,7 @@ class Alumni {
     required this.batchYear,
     this.position = '',
     this.bloodGroup,
+    this.ownerId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -38,6 +43,7 @@ class Alumni {
       batchYear: data['batch_year'] ?? '',
       position: data['position'] ?? '',
       bloodGroup: data['blood_group'] as String?,  // NEW
+      ownerId: data['owner_id'] as String?,
       createdAt: data['created_at'] != null 
           ? DateTime.parse(data['created_at']) 
           : DateTime.now(),
@@ -49,6 +55,8 @@ class Alumni {
 
   /// Convert Alumni to Supabase database row (for insert)
   Map<String, dynamic> toSupabaseInsert() {
+    // owner_id is deliberately omitted: the column defaults to auth.uid(), so
+    // the database stamps the signed-in member and a client cannot forge it.
     return {
       'name': name,
       'phone': phone,
@@ -65,6 +73,8 @@ class Alumni {
 
   /// Convert Alumni to Supabase database row (for update)
   Map<String, dynamic> toSupabaseUpdate() {
+    // owner_id is omitted here too, so an update can never hand an entry to a
+    // different member.
     return {
       'name': name,
       'phone': phone,
@@ -89,6 +99,7 @@ class Alumni {
     String? batchYear,
     String? position,
     String? bloodGroup,
+    String? ownerId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -102,6 +113,7 @@ class Alumni {
       batchYear: batchYear ?? this.batchYear,
       position: position ?? this.position,
       bloodGroup: bloodGroup ?? this.bloodGroup,
+      ownerId: ownerId ?? this.ownerId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

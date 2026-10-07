@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFFFF</color>
+    <!-- Splash background, matches AppColors.darkBackground (0xFF111111). -->
+    <color name="splash_background">#FF111111</color>
+</resources>

@@ -15,7 +15,7 @@ import 'presentation/providers/alumni_list_provider.dart';
 import 'presentation/providers/alumni_detail_provider.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/teachers_provider.dart';
-import 'presentation/providers/theme_provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,7 +91,7 @@ class MyApp extends StatelessWidget {
       return MaterialApp(
         title: 'AUSC Alumni Association',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.darkTheme,
         home: Scaffold(
           body: Center(
             child: Padding(
@@ -125,10 +125,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => TeachersProvider(SchoolApi(), prefs),
         ),
-        // Theme provider
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(prefs),
-        ),
         // Alumni list provider
         ChangeNotifierProvider(
           create: (_) => AlumniListProvider(repository),
@@ -139,27 +135,26 @@ class MyApp extends StatelessWidget {
           lazy: true,
         ),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'AUSC Alumni Association',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            routerConfig: router,
-            // Keep a phone-width column on wide screens (web/desktop).
-            builder: (context, child) => ColoredBox(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: child,
-                ),
-              ),
+      // Dark theme only, so no ThemeProvider wrapper is needed here.
+      // changes is not needed. Keep this column aligned with any future
+      // provider that does need a builder.
+      child: MaterialApp.router(
+        title: 'AUSC Alumni Association',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.dark,
+        routerConfig: router,
+        // Keep a phone-width column on wide screens (web/desktop).
+        builder: (context, child) => ColoredBox(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: child,
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

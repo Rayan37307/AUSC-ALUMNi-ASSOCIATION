@@ -9,7 +9,7 @@ import '../../../data/content/school_content.dart';
 import '../../../data/models/alumni.dart';
 import '../../providers/alumni_list_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
+
 import 'widgets/banner_carousel.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -61,7 +61,6 @@ class _Greeting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
     final auth = context.watch<AuthProvider>();
     final textTheme = Theme.of(context).textTheme;
     final greeting = auth.isSignedIn && auth.firstName.isNotEmpty
@@ -113,14 +112,6 @@ class _Greeting extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        CircleActionButton(
-          icon: themeProvider.isDarkMode
-              ? Icons.wb_sunny_outlined
-              : Icons.dark_mode_outlined,
-          tooltip: 'Toggle theme',
-          size: 44,
-          onTap: themeProvider.toggleTheme,
         ),
       ],
     );
