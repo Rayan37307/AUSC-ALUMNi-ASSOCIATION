@@ -64,7 +64,7 @@ class SchoolContent {
   /// BannerSlide here. Slides without an image render as a gradient card.
   static const List<BannerSlide> banners = [
     BannerSlide(
-      image: 'assets/images/banners/main-gate.jpg',
+      image: 'assets/images/banners/main-gate.png',
       title: 'Main Gate',
       subtitle: 'Welcome to Aftab Uddin School & College',
     ),
